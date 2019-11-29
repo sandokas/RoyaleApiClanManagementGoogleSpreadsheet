@@ -1,5 +1,6 @@
 var options = {
     method : 'get',
+    muteHttpExceptions: true,
     headers: {
       auth: 'YOUR-ROYALEAPI-KEY-HERE'
     }
@@ -14,6 +15,7 @@ function onOpen() {
 
 function LoadClan() {
   var tag = getClanTag();
+  //tag = "2CY02GRJ";
   var thisWeekSheetName = getThisWeekSheetName();
   var clan = fetchClan(tag);
   fillClanData(clan, thisWeekSheetName);
@@ -46,7 +48,7 @@ function fillWarData(currentWar, sheetName)
   }
   else
   {
-    //there should be no war fights on monday
+    //there should be no wars fought on monday
   }
     
   if (dataRange.getValue() == "" || dataSet.state == "notInWar")
@@ -83,8 +85,9 @@ function fillWarData(currentWar, sheetName)
 
 function getCurrentClanWar(tag)
 {
-  var dataAll = JSON.parse(UrlFetchApp.fetch('http://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase() + '/war', options).getContentText());
-
+  var response = UrlFetchApp.fetch('https://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase() + '/war', options);
+  Logger.log(response.getContentText()); 
+  var dataAll = JSON.parse(response.getContentText());
   return dataAll;
 }
 
@@ -102,8 +105,9 @@ function getClanTag(){
 }
 
 function fetchClan(tag){
-  var dataAll = JSON.parse(UrlFetchApp.fetch('http://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase(), options).getContentText());
-
+  var response = UrlFetchApp.fetch('http://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase(), options);
+  Logger.log(response.getContentText()); 
+  var dataAll = JSON.parse(response.getContentText());
   return dataAll;
 }
 
@@ -279,13 +283,26 @@ function getPlayerDataTest()
   Logger.log(result);
 }
 
-function testPastClanWars()
+function refillPastClanWars()
 {
   var tag = getClanTag();
   var dataAll = getPastClanWars(tag);
-  loadPastClanWar(dataAll, 7, 0,'2018-8-26');
+  var weekDate = '2019-11-24';
+  loadPastClanWar(dataAll, 11, 0,weekDate);
+  loadPastClanWar(dataAll, 9, 1,weekDate);
+  loadPastClanWar(dataAll, 7, 2,weekDate);
 }
-                
+
+function midWeekMadness()
+{
+  var tag = getClanTag();
+  var dataAll = getPastClanWars(tag);
+  var weekDate = '2019-11-24';
+  //loadPastClanWar(dataAll, 11, 0,weekDate);
+  //loadPastClanWar(dataAll, 9, 0,weekDate);
+  loadPastClanWar(dataAll, 7, 0,weekDate);
+}
+               
 function getPastClanWars(tag)
 {
   var dataAll = JSON.parse(UrlFetchApp.fetch('http://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase() + '/warlog', options).getContentText());
