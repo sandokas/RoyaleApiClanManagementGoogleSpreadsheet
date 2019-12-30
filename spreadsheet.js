@@ -111,10 +111,11 @@ function fetchClan(tag){
   return dataAll;
 }
 
-function getThisWeekSheetName() {
-  var today = new Date();
+function getNextSunday(date)
+{
+  var today = date;
   var todayWeekday = today.getDay();
-  var sunday = new Date();
+  var sunday = new Date(date.getTime());
   if (todayWeekday === 0) 
   {
     sunday = today;
@@ -123,6 +124,56 @@ function getThisWeekSheetName() {
   {
     sunday.setDate(today.getDate() - todayWeekday + 7);
   }
+  return sunday;
+}
+
+function iterateThroughSundays(year)
+{
+  //start with January
+  var d = new Date(year, 0, 1);
+  for (var i = 0; i < 52; i++)
+  {
+    d = getNextSunday(d);
+    
+    var sundayDay = d.getDate();
+    var sundayMonth = d.getMonth() + 1;
+    var sundayYear = d.getFullYear();
+    var originWeekSheetName =  sundayYear + '-' + sundayMonth + '-' + sundayDay;
+    
+    copySheetToSheet(originWeekSheetName,year);
+    
+    d.setDate(d.getDate()+7);
+  }
+}
+
+function copySheetToSheet(originName, destinationName)
+{
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var source_sheet = ss.getSheetByName(originName);
+  var target_sheet = ss.getSheetByName(destinationName);
+  var target_sheet_maxRows = target_sheet.getMaxRows();
+  var source_sheet_maxRows = source_sheet.getMaxRows();
+  target_sheet.insertRowsAfter(target_sheet_maxRows,source_sheet_maxRows - 1);
+  var source_range = source_sheet.getRange("A2:P"+source_sheet_maxRows);
+  var target_range = target_sheet.getRange("A"+(target_sheet_maxRows+1)+":P"+(target_sheet_maxRows+source_sheet_maxRows+1));
+  var target_SourceNameRange = target_sheet.getRange("Q"+(target_sheet_maxRows+1)+":Q"+(target_sheet_maxRows+source_sheet_maxRows+1));
+  source_range.copyTo(target_range,SpreadsheetApp.CopyPasteType.PASTE_VALUES);
+  for (var i = 1; i <= target_SourceNameRange.getNumRows(); i++)
+  {
+    target_SourceNameRange.getCell(i,1).setValue(originName);
+  }
+}
+
+function compileYear2019()
+{
+  iterateThroughSundays(2019);
+}
+
+function getThisWeekSheetName() {
+  var today = new Date();
+  
+  var sunday = getNextSunday(today);
+  
   var sundayDay = sunday.getDate();
   var sundayMonth = sunday.getMonth() + 1;
   var sundayYear = sunday.getFullYear();
@@ -287,7 +338,7 @@ function refillPastClanWars()
 {
   var tag = getClanTag();
   var dataAll = getPastClanWars(tag);
-  var weekDate = '2019-11-24';
+  var weekDate = '2019-12-22';
   loadPastClanWar(dataAll, 11, 0,weekDate);
   loadPastClanWar(dataAll, 9, 1,weekDate);
   loadPastClanWar(dataAll, 7, 2,weekDate);
