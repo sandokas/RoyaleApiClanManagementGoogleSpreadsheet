@@ -1,10 +1,15 @@
+var baseUrl = 'https://proxy.royaleapi.dev';
+var apiToken = 'YOUR-API-TOKEN-HERE';
+
 var options = {
     method : 'get',
     muteHttpExceptions: true,
+    contentType: 'application/json',
     headers: {
-      auth: 'YOUR-ROYALEAPI-KEY-HERE'
+      'Authorization': 'Bearer ' + apiToken
     }
 };
+
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -85,7 +90,8 @@ function fillWarData(currentWar, sheetName)
 
 function getCurrentClanWar(tag)
 {
-  var response = UrlFetchApp.fetch('https://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase() + '/war', options);
+  var uri = baseUrl + '/v1/clans/' + encodeURIComponent(tag) + '/currentwar';
+  var response = UrlFetchApp.fetch(uri, options);
   Logger.log(response.getContentText()); 
   var dataAll = JSON.parse(response.getContentText());
   return dataAll;
@@ -93,19 +99,27 @@ function getCurrentClanWar(tag)
 
 
 function getClanTag(){
+  
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var statusSheet = ss.getSheetByName("MetaInfo")
   var statusRange = statusSheet.getRange('ClanTag');
   var tag = statusRange.getValue();
+  
   if(!tag || tag === ''){
     tag = SpreadsheetApp.getUi().prompt('Enter your clan tag:').getResponseText();
     statusRange.setValue(tag);
   }
+  
+  if(!tag.match('^#'))
+    tag = '#' + tag;
+  
+  tag = tag.toUpperCase();
   return tag;
 }
 
 function fetchClan(tag){
-  var response = UrlFetchApp.fetch('http://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase(), options);
+  var uri = baseUrl + '/v1/clans/' + encodeURIComponent(tag) + '/members';
+  var response = UrlFetchApp.fetch(uri, options);
   Logger.log(response.getContentText()); 
   var dataAll = JSON.parse(response.getContentText());
   return dataAll;
@@ -205,8 +219,8 @@ function fillClanData(clan, sheetName) {
     var rows = [],
         data;
     
-    for (i = 0; i < dataSet.members.length; i++) {
-      data = dataSet.members[i];
+    for (i = 0; i < dataSet.items.length; i++) {
+      data = dataSet.items[i];
       rows.push([data.tag,  data.name, data.expLevel, data.trophies, data.donations, data.role]);
     }
     dataRange = sheet.getRange(2, 1, rows.length, 6); //6 denotes total number of entities
@@ -220,8 +234,8 @@ function fillClanData(clan, sheetName) {
   else 
   {
     //if the sheet is filled only update it
-    for (i = 0; i < dataSet.members.length; i++) {
-      data = dataSet.members[i];
+    for (i = 0; i < dataSet.items.length; i++) {
+      data = dataSet.items[i];
       var foundMember = false;
       for (n = 1; n <= dataRange.getNumRows(); n++) {
         if (dataRange.getCell(n, 1).getValue() == data.tag) {
@@ -246,99 +260,11 @@ function fillClanData(clan, sheetName) {
 
 }
 
-function test()
-{
-  var today, sunday;
-  today = sunday = new Date();
-  
-  sunday.setDate(today.getDate()-1);
-  
-  var whatDay = today.getDate(); 
-}
-function test2()
-{
-    var today = sunday = new Date();
-  var todayWeekday = today.getDay();
-  if (todayWeekday !== 0) 
-  {
-    var sunday = new Date();
-    sunday.setDate(today.getDate() - todayWeekday + 7);
-  }
-  var sundayDay = sunday.getDate();
-  var sundayMonth = sunday.getMonth() + 1;
-  var sundayYear = sunday.getFullYear();
-
-  var thisWeekSheetName =  sundayYear + '-' + sundayMonth + '-' + sundayDay;
-
-  return thisWeekSheetName;
-}
-
-// INSTEAD OF COUNTPLAYERWAR probably it will be better to:
-// 1. download all clanWar battles: type, utcTime, playerTag
-// 2. write these battles into a separate spreadsheet
-// 3. compile the values using excel 
-
-function legacyCountPlayerWar(warData) {
-  var collectionDay = 0;
-  var warDay = -1;
-  var data;
-  for (var i = 0; i < warData.length; i++) 
-  {
-    var battleDate = new Date();
-    var compareDate = new Date();
-    compareDate.setDate(compareDate.getDate() - 2);
-    data = warData[i];
-    if (data.type == 'clanWarCollectionDay')
-    {
-      battleDate = battleDate.setTime(data.utcTime*1000);
-      if (battleDate > compareDate)
-      {
-        collectionDay++;
-      }
-    }
-    else if (data.type == 'clanWarWarDay')
-    {
-      battleDate = battleDate.setTime(data.utcTime*1000);
-      if (battleDate > compareDate)
-      {
-        if (data.winner > 0)
-        {
-          warDay = 1;
-        }
-        else 
-        {
-          warDay = 0;
-        }
-      }
-    }
-    else 
-    {
-      //ignore this fight
-    }
-  }
-  var result = [{"collectionDay": collectionDay, "warDay": warDay},];
-  return result;
-}
-
-function getPlayerBattles(playerTag) {
-
-  var dataAll = JSON.parse(UrlFetchApp.fetch('http://api.royaleapi.com/player/' + playerTag.replace('#', '').toUpperCase() + '/battles', options).getContentText());
-
-  return dataAll;
-}
-                
-function getPlayerDataTest()
-{
-  var result = getPlayerBattles('YJQQGPUU');
-  result = countPlayerWar(result);
-  Logger.log(result);
-}
-
 function refillPastClanWars()
 {
   var tag = getClanTag();
   var dataAll = getPastClanWars(tag);
-  var weekDate = '2019-12-22';
+  var weekDate = '2020-2-23';
   loadPastClanWar(dataAll, 11, 0,weekDate);
   loadPastClanWar(dataAll, 9, 1,weekDate);
   loadPastClanWar(dataAll, 7, 2,weekDate);
@@ -348,7 +274,7 @@ function midWeekMadness()
 {
   var tag = getClanTag();
   var dataAll = getPastClanWars(tag);
-  var weekDate = '2019-11-24';
+  var weekDate = '2019-2-2';
   //loadPastClanWar(dataAll, 11, 0,weekDate);
   //loadPastClanWar(dataAll, 9, 0,weekDate);
   loadPastClanWar(dataAll, 7, 0,weekDate);
@@ -356,7 +282,8 @@ function midWeekMadness()
                
 function getPastClanWars(tag)
 {
-  var dataAll = JSON.parse(UrlFetchApp.fetch('http://api.royaleapi.com/clan/' + tag.replace('#', '').toUpperCase() + '/warlog', options).getContentText());
+  var uri = baseUrl + '/v1/clans/' + encodeURIComponent(tag) + '/warlog';
+  var dataAll = JSON.parse(UrlFetchApp.fetch(uri, options).getContentText());
   return dataAll;
 }
                 
