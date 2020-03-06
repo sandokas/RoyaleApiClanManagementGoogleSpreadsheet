@@ -291,8 +291,8 @@ function loadPastClanWar(dataAll, warColumnIndex, warIndex, sheetName)
 {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
   var dataRange = sheet.getRange(2,1,sheet.getMaxRows(),17);
-    for (i = 0; i < dataAll[warIndex].participants.length; i++) {
-      data = dataAll[warIndex].participants[i];
+    for (i = 0; i < dataAll.items[warIndex].participants.length; i++) {
+      data = dataAll.items[warIndex].participants[i];
       var foundMember = false;
       for (n = 1; n <= dataRange.getNumRows(); n++) {
         if (dataRange.getCell(n, 1).getValue() == data.tag) {
