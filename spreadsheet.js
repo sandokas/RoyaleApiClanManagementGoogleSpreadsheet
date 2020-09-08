@@ -10,7 +10,6 @@ var options = {
     }
 };
 
-
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Clash Royale')
@@ -24,79 +23,53 @@ function LoadClan() {
   var thisWeekSheetName = getThisWeekSheetName();
   var clan = fetchClan(tag);
   fillClanData(clan, thisWeekSheetName);
-  var currentWar = getCurrentClanWar(tag);
-  fillWarData(currentWar, thisWeekSheetName)
+  //var currentWar = getCurrentClanWar(tag);
+  //fillWarData(currentWar, thisWeekSheetName);
+  var currentRiverRace = getCurrentRiverRace(tag)
+  fillCurrentRiverRace(currentRiverRace, thisWeekSheetName);
+  
 }
 
-function fillWarData(currentWar, sheetName)
+function fillCurrentRiverRace(currentRiverRace, sheetName)
 {
-  var dataSet = currentWar;
+  var dataSet = currentRiverRace.clan;
+  //var finishTime = dataSet.finishTime;
 
   //find if the sheet is already filled.
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
   var dataRange = sheet.getRange(2,1,sheet.getMaxRows(),17);
   var today = new Date();
   var weekDay = today.getDay();
-  var warColumnIndex = 17;
-  
-  if (weekDay === 2 || weekDay === 3)
-  {
-    warColumnIndex = 7;
-  }
-  else if (weekDay === 4 || weekDay === 5)
-  {
-    warColumnIndex = 9;
-  }
-  else if (weekDay === 6 || weekDay === 0)
-  {
-    warColumnIndex = 11;
-  }
-  else
-  {
-    //there should be no wars fought on monday
-  }
-    
-  if (dataRange.getValue() == "" || dataSet.state == "notInWar")
-  {
-    //this should not happen
-    //added check if clan not currently in war
-  }
-  else 
-  {
-    //if the sheet is filled only update it
-    for (i = 0; i < dataSet.participants.length; i++) {
-      data = dataSet.participants[i];
-      var foundMember = false;
-      for (n = 1; n <= dataRange.getNumRows(); n++) {
-        if (dataRange.getCell(n, 1).getValue() == data.tag) {
-            dataRange.getCell(n,warColumnIndex).setValue(data.cardsEarned);
-            if (data.battlesPlayed != 0 && (weekDay === 3 || weekDay === 5 || weekDay === 0))
-            {
-                dataRange.getCell(n,warColumnIndex+1).setValue(data.wins);
-            }
-          foundMember = true;
-          break;
-        }
-      }
-      if (!foundMember)
-      {
-        //this should not happen
+  var fameColumnIndex = 7;
+  var repairPointsColumnIndex = 8;
+
+  //if the sheet is filled only update it
+  for (i = 0; i < dataSet.participants.length; i++) {
+    data = dataSet.participants[i];
+    var foundMember = false;
+    for (n = 1; n <= dataRange.getNumRows(); n++) {
+      if (dataRange.getCell(n, 1).getValue() == data.tag) {
+        dataRange.getCell(n,fameColumnIndex).setValue(data.fame);
+        dataRange.getCell(n,repairPointsColumnIndex).setValue(data.repairPoints);
+        foundMember = true;
+        break;
       }
     }
-    
+    if (!foundMember)
+    {
+      //this should not happen
+    }
   }
-
 }
 
-function getCurrentClanWar(tag)
+function getCurrentRiverRace(tag)
 {
-  var uri = baseUrl + '/v1/clans/' + encodeURIComponent(tag) + '/currentwar';
+  var uri = baseUrl + '/v1/clans/' + encodeURIComponent(tag) + '/currentriverrace';
   var response = UrlFetchApp.fetch(uri, options);
   Logger.log(response.getContentText()); 
   var dataAll = JSON.parse(response.getContentText());
   return dataAll;
 }
-
 
 function getClanTag(){
   
@@ -139,6 +112,32 @@ function getNextSunday(date)
     sunday.setDate(today.getDate() - todayWeekday + 7);
   }
   return sunday;
+}
+
+function getLastSunday(date)
+{
+  var today = date;
+  var todayWeekday = today.getDay();
+  var sunday = new Date(date.getTime());
+  if (todayWeekday === 0) 
+  {
+    sunday.setDate(today.getDate() - 7)
+  }
+  else 
+  {
+    sunday.setDate(today.getDate() - todayWeekday);
+  }
+  return sunday;
+}
+
+function getTodayLastSunday()
+{
+  var d = getLastSunday(new Date());
+  var sundayDay = d.getDate();
+  var sundayMonth = d.getMonth() + 1;
+  var sundayYear = d.getFullYear();
+  var originWeekSheetName =  sundayYear + '-' + sundayMonth + '-' + sundayDay;
+  return originWeekSheetName;
 }
 
 function iterateThroughSundays(year)
@@ -258,56 +257,4 @@ function fillClanData(clan, sheetName) {
   }
   
 
-}
-
-function refillPastClanWars()
-{
-  var tag = getClanTag();
-  var dataAll = getPastClanWars(tag);
-  var weekDate = '2020-2-23';
-  loadPastClanWar(dataAll, 11, 0,weekDate);
-  loadPastClanWar(dataAll, 9, 1,weekDate);
-  loadPastClanWar(dataAll, 7, 2,weekDate);
-}
-
-function midWeekMadness()
-{
-  var tag = getClanTag();
-  var dataAll = getPastClanWars(tag);
-  var weekDate = '2019-2-2';
-  //loadPastClanWar(dataAll, 11, 0,weekDate);
-  //loadPastClanWar(dataAll, 9, 0,weekDate);
-  loadPastClanWar(dataAll, 7, 0,weekDate);
-}
-               
-function getPastClanWars(tag)
-{
-  var uri = baseUrl + '/v1/clans/' + encodeURIComponent(tag) + '/warlog';
-  var dataAll = JSON.parse(UrlFetchApp.fetch(uri, options).getContentText());
-  return dataAll;
-}
-                
-function loadPastClanWar(dataAll, warColumnIndex, warIndex, sheetName)
-{
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
-  var dataRange = sheet.getRange(2,1,sheet.getMaxRows(),17);
-    for (i = 0; i < dataAll.items[warIndex].participants.length; i++) {
-      data = dataAll.items[warIndex].participants[i];
-      var foundMember = false;
-      for (n = 1; n <= dataRange.getNumRows(); n++) {
-        if (dataRange.getCell(n, 1).getValue() == data.tag) {
-            dataRange.getCell(n,warColumnIndex).setValue(data.cardsEarned);
-            if (data.battlesPlayed != 0)
-            {
-                dataRange.getCell(n,warColumnIndex+1).setValue(data.wins);
-            }
-          foundMember = true;
-          break;
-        }
-      }
-      if (!foundMember)
-      {
-        //this should not happen
-      }
-    }  
 }
