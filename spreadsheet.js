@@ -304,12 +304,25 @@ function fillClanData(clan, sheetName) {
       }
       if (!foundMember)
       {
-        var newDataRange = sheet.getRange(sheet.getMaxRows()+1,1,1,6);
+        var currentRow = sheet.getMaxRows()+1;
+        var newDataRange = sheet.getRange(currentRow,1,1,6);
         newDataRange.setValues([[data.tag,  data.name, data.expLevel, data.trophies, data.donations, data.role]]);
+        var addDateRange = sheet.getRange(currentRow,9,1,1);
+        addDateRange.setValues([[getTodayString()]]);
       }
     }
     
   }
   
 
+}
+
+function getTodayString()
+{
+    var today = new Date();
+    var todayDay = today.getDate();
+    var todayMonth = today.getMonth() + 1;
+    var todayYear = today.getFullYear();
+    var addedOn =  todayYear + '-' + todayMonth + '-' + todayDay;        
+    return addedOn;
 }
