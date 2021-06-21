@@ -14,6 +14,7 @@ function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Clash Royale')
   .addItem('Update Clan', 'LoadClan')
+  .addItem('Reload Last Race', 'ReloadLastRiverRace')
   .addToUi()
 }
 
@@ -25,14 +26,48 @@ function LoadClan() {
   fillClanData(clan, thisWeekSheetName);
   //var currentWar = getCurrentClanWar(tag);
   //fillWarData(currentWar, thisWeekSheetName);
-  var currentRiverRace = getCurrentRiverRace(tag)
+  var currentRiverRace = getCurrentRiverRace(tag);
   fillCurrentRiverRace(currentRiverRace, thisWeekSheetName);
   
+}
+
+function ReloadLastRiverRace()
+{
+  var tag = getClanTag();
+  var lastWeekSheetName = getLastWeekSheetName();
+  var lastRiverRace = getLastRiverRace(tag);
+  fillCurrentRiverRace(lastRiverRace, lastWeekSheetName);
+}
+
+function getLastWeekSheetName()
+{
+  var today = new Date();
+  var sunday = getLastSunday(today);
+  
+  var sundayDay = sunday.getDate();
+  var sundayMonth = sunday.getMonth() + 1;
+  var sundayYear = sunday.getFullYear();
+
+  var thisWeekSheetName =  sundayYear + '-' + sundayMonth + '-' + sundayDay;
+  var thisWeekSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(thisWeekSheetName);
+  if (thisWeekSheet === null)
+  {
+    var template = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("template");
+    thisWeekSheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet(thisWeekSheetName,0, {template: template});
+    thisWeekSheet.activate();
+    var columnNames = ["ID","Name","Level","Trophies","Donations","Role"];
+    var dataRange = thisWeekSheet.getRange(1,1,1,6);
+    dataRange.setValues([columnNames]);
+  }
+  return thisWeekSheetName;
 }
 
 function fillCurrentRiverRace(currentRiverRace, sheetName)
 {
   var dataSet = currentRiverRace.clan;
+
+  //if (dataSet == null)
+  //  dataSet = currentRiverRace;
   //var finishTime = dataSet.finishTime;
 
   //find if the sheet is already filled.
@@ -69,6 +104,26 @@ function getCurrentRiverRace(tag)
   Logger.log(response.getContentText()); 
   var dataAll = JSON.parse(response.getContentText());
   return dataAll;
+}
+
+function getLastRiverRace(tag)
+{
+  var uri = baseUrl + '/v1/clans/' + encodeURIComponent(tag) + '/riverracelog?limit=1';
+  var response = UrlFetchApp.fetch(uri, options);
+  Logger.log(response.getContentText()); 
+  var dataAll = JSON.parse(response.getContentText());
+  var _items = dataAll.items;
+  for (var i = 0; i < dataAll.items.length; i++)
+  {
+    var _standings = dataAll.items[i].standings;
+    for (var f = 0; f < dataAll.items[i].standings.length; f++)
+    {
+      var _clan = dataAll.items[i].standings[f].clan;
+      if (dataAll.items[i].standings[f].clan.tag == tag)
+        data = dataAll.items[0].standings[f];
+    }
+  }
+  return data;
 }
 
 function getClanTag(){
