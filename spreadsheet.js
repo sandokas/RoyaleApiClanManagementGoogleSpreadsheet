@@ -1,5 +1,6 @@
-var baseUrl = 'https://proxy.royaleapi.dev';
-var apiToken = 'YOUR-API-TOKEN-HERE';
+var baseUrl = 'https://api.clashroyale.com';
+var ipcanhazip = 'http://ipv4.ipcanhazip.com';
+var apiToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiIsImtpZCI6IjI4YTMxOGY3LTAwMDAtYTFlYi03ZmExLTJjNzQzM2M2Y2NhNSJ9.eyJpc3MiOiJzdXBlcmNlbGwiLCJhdWQiOiJzdXBlcmNlbGw6Z2FtZWFwaSIsImp0aSI6IjE1N2FkNDNhLWFhMmEtNDRhOC1iOTQ1LTFkMGJmNGRiNzk2YyIsImlhdCI6MTY0NDQxMDc4NCwic3ViIjoiZGV2ZWxvcGVyL2NhYzdmZTAwLWI5NWMtZGFhOC0xNTczLTdhMmQ0ZGY3NDdhMSIsInNjb3BlcyI6WyJyb3lhbGUiXSwibGltaXRzIjpbeyJ0aWVyIjoiZGV2ZWxvcGVyL3NpbHZlciIsInR5cGUiOiJ0aHJvdHRsaW5nIn0seyJjaWRycyI6WyIzNC4xMTYuMjIuMTgiLCIzNS4xODcuMTMyLjIzOSIsIjEwNy4xNzguMTkyLjUwIiwiMzQuMTE2LjIyLjE2IiwiMTA3LjE3OC4xOTIuNDgiXSwidHlwZSI6ImNsaWVudCJ9XX0.AR7fji76MxkKv4RWmwtcTMTLPN_7vLUtfkoc2fIcR37c-9nv2wfUwvTryLcQJFw37jxCkMr1C8TsT6SVriBryQ';
 
 var options = {
     method : 'get',
@@ -14,21 +15,23 @@ function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Clash Royale')
   .addItem('Update Clan', 'LoadClan')
-  .addItem('Reload Last Race', 'ReloadLastRiverRace')
+  .addItem('Update Current RiverRace', 'LoadRiverRace')
+  .addItem('Reload Last RiverRace', 'ReloadLastRiverRace')
   .addToUi()
 }
 
 function LoadClan() {
   var tag = getClanTag();
-  //tag = "2CY02GRJ";
   var thisWeekSheetName = getThisWeekSheetName();
   var clan = fetchClan(tag);
   fillClanData(clan, thisWeekSheetName);
-  //var currentWar = getCurrentClanWar(tag);
-  //fillWarData(currentWar, thisWeekSheetName);
+}
+
+function LoadRiverRace() {
+  var tag = getClanTag();
+  var thisWeekSheetName = getThisWeekSheetName();
   var currentRiverRace = getCurrentRiverRace(tag);
   fillCurrentRiverRace(currentRiverRace, thisWeekSheetName);
-  
 }
 
 function ReloadLastRiverRace()
@@ -232,9 +235,9 @@ function copySheetToSheet(originName, destinationName)
   }
 }
 
-function compileYear2019()
+function compileYear2021()
 {
-  iterateThroughSundays(2019);
+  iterateThroughSundays(2021);
 }
 
 function getThisWeekSheetName() {
@@ -325,4 +328,19 @@ function getTodayString()
     var todayYear = today.getFullYear();
     var addedOn =  todayYear + '-' + todayMonth + '-' + todayDay;        
     return addedOn;
+}
+
+function sheetName() {
+  return SpreadsheetApp.getActiveSpreadsheet().getActiveSheet().getName();
+}
+
+function whatIsMyIP() {
+  var spreadSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ip');
+  var range = spreadSheet.getRange('A:A');
+  var uri = 'https://ipv4.icanhazip.com/';
+  for (var i = 0; i<1000; i++) {
+    var response = UrlFetchApp.fetch(uri);
+    Logger.log(response); 
+    range.getCell(i+1,1).setValue(response);
+  }
 }
