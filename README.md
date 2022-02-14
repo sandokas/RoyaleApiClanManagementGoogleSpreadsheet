@@ -12,4 +12,4 @@ LoadClan -> Load/Update Clan (creates a sheet per week recommend to run at least
 
 LoadRiverRace -> Update Clan with current RiverRace points
 
-ReloadLastRiverRace -> Use Mondays to Update Last weeks final clan points.
+ReloadLastRiverRace -> Use Mondays after 10AM UTC to Update Last weeks final clan points.
