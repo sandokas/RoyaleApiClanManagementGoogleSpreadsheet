@@ -1,4 +1,4 @@
-var baseUrl = 'https://api.clashroyale.com';
+var baseUrl = 'https://proxy.royaleapi.dev';
 var ipcanhazip = 'http://ipv4.ipcanhazip.com';
 var apiToken = 'YOUR-API-TOKEN-HERE';
 
