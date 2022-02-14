@@ -8,5 +8,7 @@ This is because google spreadsheet will use different outgoing ips ranges and th
 To overcome this ip whitelist this code points to RoyaleAPI proxy.
 
 LoadClan -> Load/Update Clan (creates a sheet per week recommend to run at least Sundays before Midnight UTC)
+
 LoadRiverRace -> Update Clan with current RiverRace points
+
 ReloadLastRiverRace -> Use Mondays to Update Last weeks final clan points.
