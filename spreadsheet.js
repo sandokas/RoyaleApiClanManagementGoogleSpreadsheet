@@ -109,7 +109,7 @@ function fillCurrentRiverRace(currentRiverRace, sheetName)
   var today = new Date();
   var weekDay = today.getDay();
   var fameColumnIndex = 7;
-  var repairPointsColumnIndex = 8;
+  var decksUsedColumnIndex = 8;
 
   //if the sheet is filled only update it
   for (i = 0; i < dataSet.participants.length; i++) {
@@ -118,7 +118,7 @@ function fillCurrentRiverRace(currentRiverRace, sheetName)
     for (n = 1; n <= dataRange.getNumRows(); n++) {
       if (dataRange.getCell(n, 1).getValue() == data.tag) {
         dataRange.getCell(n,fameColumnIndex).setValue(data.fame);
-        dataRange.getCell(n,repairPointsColumnIndex).setValue(data.repairPoints);
+        dataRange.getCell(n,decksUsedColumnIndex).setValue(data.decksUsed);
         foundMember = true;
         break;
       }
@@ -146,6 +146,10 @@ function getLastRiverRace(tag)
   Logger.log(response.getContentText()); 
   var dataAll = JSON.parse(response.getContentText());
   var _items = dataAll.items;
+  if (undefined == _items)
+  {
+    throw dataAll.reason + ':' + dataAll.message;
+  }
   for (var i = 0; i < dataAll.items.length; i++)
   {
     var _standings = dataAll.items[i].standings;
@@ -265,9 +269,9 @@ function copySheetToSheet(originName, destinationName)
   }
 }
 
-function compileYear2021()
+function compileYear2023()
 {
-  iterateThroughSundays(2021);
+  iterateThroughSundays(2023);
 }
 
 function getThisWeekSheetName() {
@@ -289,8 +293,51 @@ function getThisWeekSheetName() {
     var columnNames = ["ID","Name","Level","Trophies","Donations","Role"];
     var dataRange = thisWeekSheet.getRange(1,1,1,6);
     dataRange.setValues([columnNames]);
+
+    // update S1 with sunday date for checking promotions and half-run participation
+    var sundayName = [thisWeekSheetName];
+    thisWeekSheet.getRange(1,19,1,1).setValues([sundayName]);
   }
   return thisWeekSheetName;
+}
+
+function updateJoinedDates(targetSheetName, originSheetName)
+{
+    var targetSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(targetSheetName);
+    if (targetSheet === null)
+      return;
+    var originSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(originSheetName);
+    if (originSheet === null)
+      return;
+    var targetDataRange = targetSheet.getRange(2,1,targetSheet.getMaxRows(),9);
+    if (targetDataRange.getValue() == "")
+      return;
+    var originDataRange = originSheet.getRange(2,1,originSheet.getMaxRows(),9);
+    if (originDataRange.getValue() == "")
+      return;    
+    for (i = 0; i < targetDataRange.getNumRows()-1; i++) 
+    {
+      var joined = targetDataRange.getCell(i+1,9);
+      if (joined.getValue() == "")
+      {
+        var userId = targetDataRange.getCell(i+1,1).getValue();
+        for (f = 0; f < originDataRange.getNumRows(); f++)
+        {
+          var originUserId = originDataRange.getCell(f+1,1).getValue();
+          if (userId == originUserId)
+          {
+            var originJoined = originDataRange.getCell(f+1,9).getValue();
+            joined.setValue(originJoined);
+            break;
+          }
+        }
+      }
+    }
+}
+
+function testUpdateJoinedDates() 
+{
+  updateJoinedDates("2024-5-19","2024-4-21");
 }
 
 function fillClanData(clan, sheetName) {
@@ -317,6 +364,15 @@ function fillClanData(clan, sheetName) {
       //row.length+2 - 1 for the header, another to start deleting on the empty row
       sheet.deleteRows(rows.length+2, 50 - rows.length);
     }
+    //update joined dates
+    var today = new Date();
+    var lastSunday = getLastSunday(today);
+    var lastSundayDay = lastSunday.getDate();
+    var lastSundayMonth = lastSunday.getMonth() + 1;
+    var lastSundayYear = lastSunday.getFullYear();
+
+    var lastWeekSheetName =  lastSundayYear + '-' + lastSundayMonth + '-' + lastSundayDay;    
+    updateJoinedDates(sheetName,lastWeekSheetName);
   }
   else 
   {
